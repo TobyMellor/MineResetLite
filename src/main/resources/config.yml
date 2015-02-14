@@ -1,0 +1,5 @@
+#Set this value to false to disable the checking of updates
+check-for-updates: true
+api: true
+api-link: http://smashroyale.com/tobysapi.php
+secret: ILOVEARMADILLOS

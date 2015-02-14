@@ -110,7 +110,7 @@ public class MineJobListener implements IJobEntryListener {
                 }
             }
             
-            m_mine.addAir(air);
+            m_mine.setAirCount(air);
             m_mine.setDone(true);
             m_mine.setPending(false);
             MineResetLite.instance.resetting = false;

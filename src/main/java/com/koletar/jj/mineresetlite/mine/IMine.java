@@ -19,6 +19,6 @@ public interface IMine {
 
     public boolean isInside(Player p);
 
-    public void addAir(int air);
+    public void setAirCount(int air);
     
 }

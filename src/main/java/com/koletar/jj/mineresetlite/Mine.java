@@ -229,8 +229,8 @@ public class Mine implements ConfigurationSerializable, IMine {
 	}
 
         @Override
-        public void addAir(int air) {
-            this.air += air;
+        public void setAirCount(int air) {
+            this.air = air;
         }
         
 	private void setup() {
@@ -544,7 +544,8 @@ public class Mine implements ConfigurationSerializable, IMine {
 
 
 		//Actually reset
-		air = 0;
+		
+                setAirCount(0);
 		this.speed = new ArrayList<Double>();
 		final String jobName = UUID.randomUUID().toString();
 

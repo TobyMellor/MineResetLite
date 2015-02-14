@@ -4,6 +4,9 @@ import com.gmail.filoghost.holographicdisplays.api.Hologram;
 import com.gmail.filoghost.holographicdisplays.api.HologramsAPI;
 import com.gmail.filoghost.holographicdisplays.api.placeholder.PlaceholderReplacer;
 import com.gmail.filoghost.holographicdisplays.object.NamedHologramManager;
+import com.koletar.jj.mineresetlite.mine.IMine;
+import com.koletar.jj.mineresetlite.mine.MineBlockPLacerListener;
+import com.koletar.jj.mineresetlite.mine.MineJobListener;
 import com.sk89q.worldedit.CuboidClipboard;
 import com.sk89q.worldedit.MaxChangedBlocksException;
 import com.sk89q.worldedit.WorldEdit;
@@ -38,12 +41,13 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import org.primesoft.asyncworldedit.blockPlacer.BlockPlacer;
 import org.primesoft.asyncworldedit.playerManager.PlayerEntry;
 
 /**
  * @author jjkoletar
  */
-public class Mine implements ConfigurationSerializable {
+public class Mine implements ConfigurationSerializable, IMine {
 	public int minX;
 	public int minY;
 	public int minZ;
@@ -84,6 +88,17 @@ public class Mine implements ConfigurationSerializable {
 	private CacheProvider<Map> stats;
 	private boolean pending = false;
 //	private List<String> holograms;
+        
+        
+        /**
+         * The async edit session factory
+         */
+        private final AsyncEditSessionFactory m_esFactory;
+        
+        /**
+         * The AWE block placer
+         */
+        private final BlockPlacer m_blockPlacer;
 
 	public Mine(int minX, int minY, int minZ, int maxX, int maxY, int maxZ, String name, World world) {
 		this.minX = minX;
@@ -105,6 +120,9 @@ public class Mine implements ConfigurationSerializable {
 
 //		this.holograms = new LinkedList();
 		setup();
+                
+                m_esFactory = ((AsyncEditSessionFactory) WorldEdit.getInstance().getEditSessionFactory());
+                m_blockPlacer = AsyncWorldEditMain.getInstance().getBlockPlacer();
 	}
 
 	public Mine(Map<String, Object> me) {
@@ -205,8 +223,16 @@ public class Mine implements ConfigurationSerializable {
 		if (me.containsKey("everyone"))
 			this.everyone = (Boolean) me.get("everyone");
 		setup();
+                
+                m_esFactory = ((AsyncEditSessionFactory) WorldEdit.getInstance().getEditSessionFactory());
+                m_blockPlacer = AsyncWorldEditMain.getInstance().getBlockPlacer();
 	}
 
+        @Override
+        public void addAir(int air) {
+            this.air += air;
+        }
+        
 	private void setup() {
 		HologramsAPI.registerPlaceholder(MineResetLite.instance, "{" + this.name + ":" + "name}", 60.0, new PlaceholderReplacer() {
 
@@ -428,6 +454,7 @@ public class Mine implements ConfigurationSerializable {
 		return m;
 	}
 
+        /**
 //	public Map<Location, String[]> getHolograms() {
 //		Map<Location, String[]> m = new HashMap<Location, String[]>();
 //		for (String s : holograms) {
@@ -439,6 +466,7 @@ public class Mine implements ConfigurationSerializable {
 //		}
 //		return m;
 //	}
+*/
 
 	public void addSign(Sign s) {
 		StringBuffer sb = new StringBuffer();
@@ -520,74 +548,11 @@ public class Mine implements ConfigurationSerializable {
 		this.speed = new ArrayList<Double>();
 		final String jobName = UUID.randomUUID().toString();
 
-		final ThreadSafeEditSession es = ((AsyncEditSessionFactory) WorldEdit.getInstance().getEditSessionFactory()).getThreadSafeEditSession(new BukkitWorld(world), 99999999);
-		final IJobEntryListener stateListener = new IJobEntryListener() {
-			@Override
-			public void jobStateChanged(JobEntry job) {
-				jobID = job.getJobId();
-				if (job.getStatus() == JobEntry.JobStatus.PlacingBlocks) {
-					System.out.println("Placing blocks for, " + name + ".");
-					setPending(false);
-					setDone(false);
-					//Pull players out
-					for (Player p : Bukkit.getServer().getOnlinePlayers()) {
-						Location l = p.getLocation();
-						if (isInside(p)) {
-							if (teleport != null) {
-								if (!teleport.equals("")) {
-									p.teleport(new Location(world, Integer.parseInt(teleport.split(",")[0]), Integer.parseInt(teleport.split(",")[1]), Integer.parseInt(teleport.split(",")[2]),
-											Float.parseFloat(teleport.split(",")[3]), Float.parseFloat(teleport.split(",")[4])));
-								} else {
-									p.teleport(new Location(world, l.getX(), maxY + 2D, l.getZ()));
-								}
-							} else {
-								p.teleport(new Location(world, l.getX(), maxY + 2D, l.getZ()));
-							}
-
-						}
-					}
-				}
-				if (job.getStatus() == JobEntry.JobStatus.Done) {
-					for (int x = minX; x <= maxX; x++) {
-						for (int y = minY; y <= maxY; y++) {
-							for (int z = minZ; z <= maxZ; z++) {
-								if (world.getBlockAt(x, y, z).getTypeId() == 0) {
-									air++;
-								}
-							}
-						}
-					}
-					setDone(true);
-					setPending(false);
-					MineResetLite.instance.resetting = false;
-					System.out.println("Finished mine, " + name + ".");
-				}
-			}
-		};
-		final IBlockPlacerListener listener = new IBlockPlacerListener() {
-			@Override
-			public void jobAdded(JobEntry job) {
-				if (job.getName().equals(jobName)
-						&& job.getPlayer().equals(PlayerEntry.UNKNOWN)) {
-					job.addStateChangedListener(stateListener);
-					final IBlockPlacerListener listener = this;
-
-					new Thread(new Runnable() {
-
-						@Override
-						public void run() {
-							AsyncWorldEditMain.getInstance().getBlockPlacer().removeListener(listener);
-						}
-					}).start();
-				}
-			}
-
-			@Override
-			public void jobRemoved(JobEntry job) {
-			}
-		};
-
-		AsyncWorldEditMain.getInstance().getBlockPlacer().addListener(listener);
+		final ThreadSafeEditSession es = m_esFactory.getThreadSafeEditSession(new BukkitWorld(world), 99999999);
+		final IJobEntryListener stateListener = new MineJobListener(name, teleport, world, minX, minY, minZ, maxX, maxY, maxZ, this);
+		final IBlockPlacerListener listener = new MineBlockPLacerListener(jobName, stateListener, m_blockPlacer);
+		
+                m_blockPlacer.addListener(listener);
 		total = 0;
 		if (schematic != null) {
 			String sch = schematic;
@@ -612,8 +577,7 @@ public class Mine implements ConfigurationSerializable {
 			} else {
 				MineResetLite.broadcast(Phrases.phrase("schematicBc", this, sch), this);
 
-				AsyncWorldEditMain.getInstance()
-						.getBlockPlacer().performAsAsyncJob((ThreadSafeEditSession) es,
+				m_blockPlacer.performAsAsyncJob((ThreadSafeEditSession) es,
 						PlayerEntry.UNKNOWN,
 						jobName, new FuncParamEx<Integer, CancelabeEditSession, MaxChangedBlocksException>() {
 							@Override
@@ -625,13 +589,13 @@ public class Mine implements ConfigurationSerializable {
 									} else {
 										cc.paste(cancelabeEditSession, new com.sk89q.worldedit.Vector(Integer.parseInt(origin.split(",")[0]), Integer.parseInt(origin.split(",")[1]), Integer.parseInt(origin.split(",")[2])), false);
 									}
-									for (JobEntry e : AsyncWorldEditMain.getInstance().getBlockPlacer().getPlayerEvents(PlayerEntry.UNKNOWN).getJobs()) {
+									for (JobEntry e : m_blockPlacer.getPlayerEvents(PlayerEntry.UNKNOWN).getJobs()) {
 										if (e.getName().equalsIgnoreCase(jobName)) {
 											jobID = e.getJobId();
 										}
 									}
 									int b = 0;
-									for (BlockPlacerEntry e : AsyncWorldEditMain.getInstance().getBlockPlacer().getPlayerEvents(PlayerEntry.UNKNOWN).getQueue()) {
+									for (BlockPlacerEntry e : m_blockPlacer.getPlayerEvents(PlayerEntry.UNKNOWN).getQueue()) {
 										if (e.getJobId() == jobID) {
 											b++;
 										}
@@ -655,8 +619,7 @@ public class Mine implements ConfigurationSerializable {
 		} else {
 			// Manually :(
 			final Mine t = this;
-			AsyncWorldEditMain.getInstance()
-					.getBlockPlacer().performAsAsyncJob((ThreadSafeEditSession) es,
+			m_blockPlacer.performAsAsyncJob((ThreadSafeEditSession) es,
 					PlayerEntry.UNKNOWN,
 					jobName, new FuncParamEx<Integer, CancelabeEditSession, MaxChangedBlocksException>() {
 						@Override
@@ -666,7 +629,7 @@ public class Mine implements ConfigurationSerializable {
 							try {
 								CuboidRegion region = new CuboidRegion(new BukkitWorld(world), new com.sk89q.worldedit.Vector(minX, minY, minZ), new com.sk89q.worldedit.Vector(maxX, maxY, maxZ));
 								int i = cancelabeEditSession.setBlocks(region, new MinePattern(t));
-								for (JobEntry e : AsyncWorldEditMain.getInstance().getBlockPlacer().getPlayerEvents(PlayerEntry.UNKNOWN).getJobs()) {
+								for (JobEntry e : m_blockPlacer.getPlayerEvents(PlayerEntry.UNKNOWN).getJobs()) {
 									if (e.getName().equalsIgnoreCase(jobName)) {
 										jobID = e.getJobId();
 									}
@@ -770,6 +733,7 @@ public class Mine implements ConfigurationSerializable {
 		return this.stats.get();
 	}
 
+        /**
 	//	Map<Integer, Integer> blocks = new HashMap<Integer, Integer>();
 //	double blocksSeen = 0.0D;
 //	for (int x = this.minX; x <= this.maxX; x++) {
@@ -795,6 +759,7 @@ public class Mine implements ConfigurationSerializable {
 //		percentageComposition.put(entry.getKey(), (int) (Double.valueOf(entry.getValue().intValue() / blocksSeen) * 100D));
 //	}
 //	return percentageComposition;
+*/
 	public boolean shouldMineReset(CommandSender sender) {
 		Map<Integer, Integer> blocks = new HashMap<Integer, Integer>();
 		double blocksSeen = 0.0D;
@@ -848,8 +813,7 @@ public class Mine implements ConfigurationSerializable {
 		}
 		/* Hologram updates & Time */
 		if (!isDone()) {
-			AsyncWorldEditMain async = AsyncWorldEditMain.getInstance();
-			BlockPlacerPlayer p = async.getBlockPlacer().getPlayerEvents(PlayerEntry.UNKNOWN);
+			BlockPlacerPlayer p = m_blockPlacer.getPlayerEvents(PlayerEntry.UNKNOWN);
 			if (total != 0) {
 				int left = 0;
 				if (p != null)

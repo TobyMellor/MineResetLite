@@ -15,7 +15,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Player;
 import org.primesoft.asyncworldedit.AsyncWorldEditMain;
-import org.primesoft.asyncworldedit.PlayerEntry;
 import org.primesoft.asyncworldedit.blockPlacer.BlockPlacerEntry;
 import org.primesoft.asyncworldedit.blockPlacer.BlockPlacerPlayer;
 import org.primesoft.asyncworldedit.blockPlacer.IBlockPlacerListener;
@@ -39,6 +38,7 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import org.primesoft.asyncworldedit.playerManager.PlayerEntry;
 
 /**
  * @author jjkoletar
@@ -613,11 +613,11 @@ public class Mine implements ConfigurationSerializable {
 				MineResetLite.broadcast(Phrases.phrase("schematicBc", this, sch), this);
 
 				AsyncWorldEditMain.getInstance()
-						.getBlockPlacer().PerformAsAsyncJob((ThreadSafeEditSession) es,
+						.getBlockPlacer().performAsAsyncJob((ThreadSafeEditSession) es,
 						PlayerEntry.UNKNOWN,
 						jobName, new FuncParamEx<Integer, CancelabeEditSession, MaxChangedBlocksException>() {
 							@Override
-							public Integer Execute(CancelabeEditSession cancelabeEditSession) throws MaxChangedBlocksException {
+							public Integer execute(CancelabeEditSession cancelabeEditSession) throws MaxChangedBlocksException {
 								try {
 									CuboidClipboard cc = CuboidClipboard.loadSchematic(f);
 									if (origin == null) {
@@ -656,11 +656,11 @@ public class Mine implements ConfigurationSerializable {
 			// Manually :(
 			final Mine t = this;
 			AsyncWorldEditMain.getInstance()
-					.getBlockPlacer().PerformAsAsyncJob((ThreadSafeEditSession) es,
+					.getBlockPlacer().performAsAsyncJob((ThreadSafeEditSession) es,
 					PlayerEntry.UNKNOWN,
 					jobName, new FuncParamEx<Integer, CancelabeEditSession, MaxChangedBlocksException>() {
 						@Override
-						public Integer Execute(CancelabeEditSession cancelabeEditSession) throws MaxChangedBlocksException {
+						public Integer execute(CancelabeEditSession cancelabeEditSession) throws MaxChangedBlocksException {
 
 							/* Brum. */
 							try {

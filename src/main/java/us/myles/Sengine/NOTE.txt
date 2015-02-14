@@ -1,0 +1,4 @@
+======== This is SENGINE ========
+A library developed by _MylesC, to aid building of Bukkit plugins.
+This library has a few features to speed up development of plugins.
+Use at your own risk, this library is copyrighted to _MylesC.

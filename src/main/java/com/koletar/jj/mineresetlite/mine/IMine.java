@@ -20,5 +20,9 @@ public interface IMine {
     public boolean isInside(Player p);
 
     public void setAirCount(int air);
+
+    public void setJobID(int jobID);
+
+    public void setTotal(int total);
     
 }

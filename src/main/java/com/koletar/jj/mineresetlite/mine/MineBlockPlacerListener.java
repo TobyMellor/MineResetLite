@@ -10,16 +10,19 @@ import org.primesoft.asyncworldedit.playerManager.PlayerEntry;
  *
  * @author SBPrime
  */
-public class MineBlockPLacerListener implements IBlockPlacerListener, Runnable {
+public class MineBlockPlacerListener implements IBlockPlacerListener, Runnable {
 
     private final String m_jobName;
 
     private final IJobEntryListener m_stateListener;
 
     private final BlockPlacer m_blockPlacer;
+    
+    private final IMine m_mine;
 
-    public MineBlockPLacerListener(String jobName, IJobEntryListener stateListener,
+    public MineBlockPlacerListener(IMine mine, String jobName, IJobEntryListener stateListener,
             BlockPlacer blockPlacer) {
+        m_mine = mine;
         m_jobName = jobName;
         m_stateListener = stateListener;
         m_blockPlacer = blockPlacer;
@@ -29,7 +32,9 @@ public class MineBlockPLacerListener implements IBlockPlacerListener, Runnable {
         if (job.getName().equals(m_jobName)
                 && job.getPlayer().equals(PlayerEntry.UNKNOWN)) {
             job.addStateChangedListener(m_stateListener);
+            
 
+            m_mine.setJobID(job.getJobId());
             new Thread(this).start();
         }
     }

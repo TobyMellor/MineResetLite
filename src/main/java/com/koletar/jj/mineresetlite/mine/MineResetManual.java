@@ -11,7 +11,6 @@ import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.Region;
-import java.io.File;
 import org.bukkit.World;
 import org.primesoft.asyncworldedit.blockPlacer.BlockPlacer;
 import org.primesoft.asyncworldedit.blockPlacer.entries.JobEntry;
@@ -54,12 +53,7 @@ public class MineResetManual implements FuncParamEx<Integer, CancelabeEditSessio
         /* Brum. */
         try {            
             int i = cancelabeEditSession.setBlocks(m_region, m_pattern);
-            for (JobEntry e : m_blockPlacer.getPlayerEvents(PlayerEntry.UNKNOWN).getJobs()) {
-                if (e.getName().equalsIgnoreCase(m_jobName)) {
-                    jobID = e.getJobId();
-                }
-            }
-            
+
             m_mine.setTotal(i);
         } catch (Exception e) {
             Sengine.dump(e, "Mine: " + m_name, "ID: " + jobID);

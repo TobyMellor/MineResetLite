@@ -46,6 +46,8 @@ import org.primesoft.asyncworldedit.playerManager.PlayerEntry;
  */
 public class Mine implements ConfigurationSerializable, IMine {
 
+    public static final String PLAYER_NAME = "MineResetLite-Player-";
+
     private static final Random s_rnd = new Random();
     public int minX;
     public int minY;
@@ -570,9 +572,10 @@ public class Mine implements ConfigurationSerializable, IMine {
         //Actually reset
         setAirCount(0);
         this.speed = new ArrayList<Double>();
-        final String jobName = UUID.randomUUID().toString();
+        final String jobName = name + "-" + UUID.randomUUID().toString();
 
-        final ThreadSafeEditSession es = m_esFactory.getThreadSafeEditSession(new BukkitWorld(world), 99999999);
+        final PlayerEntry pEntry = new PlayerEntry(PLAYER_NAME + UUID.randomUUID().toString(), UUID.randomUUID());
+        final ThreadSafeEditSession es = m_esFactory.getThreadSafeEditSession(new BukkitWorld(world), 99999999, null, pEntry);
         final IJobEntryListener stateListener = new MineJobListener(name, teleport, world, minX, minY, minZ, maxX, maxY, maxZ, this);
         final IBlockPlacerListener listener = new MineBlockPlacerListener(this, jobName, stateListener, m_blockPlacer);
 
@@ -607,10 +610,10 @@ public class Mine implements ConfigurationSerializable, IMine {
 
             function = new MineResetSchematic(m_blockPlacer, name, f, this, origin, minX, maxY, minZ);
         } else {
-            function = new MineResetManual(m_blockPlacer, jobName, name, this, world, new MinePattern(this), minX, minY, minZ, maxX, maxY, maxZ);
+            function = new MineResetManual(m_blockPlacer, name, this, world, new MinePattern(this), minX, minY, minZ, maxX, maxY, maxZ);
         }
 
-        m_blockPlacer.performAsAsyncJob(es, PlayerEntry.UNKNOWN, jobName, function);
+        m_blockPlacer.performAsAsyncJob(es, pEntry, jobName, function);
     }
 
     public Map<Integer, Integer> getStats() {
@@ -770,75 +773,81 @@ public class Mine implements ConfigurationSerializable, IMine {
         }
         /* Hologram updates & Time */
         if (!isDone()) {
-            BlockPlacerPlayer p = m_blockPlacer.getPlayerEvents(PlayerEntry.UNKNOWN);
             if (total != 0) {
                 int left = 0;
-                if (p != null) {
-                    Queue<BlockPlacerEntry> queue = p.getQueue();
-                    if (queue != null) {
-                        BlockPlacerEntry[] queuedEntries;
-                        synchronized (queue) {
-                            queuedEntries = queue.toArray(new BlockPlacerEntry[0]);
-                        }
-                        for (BlockPlacerEntry e : queuedEntries) {
-                            if (e.getJobId() == this.jobID) {
-                                left++;
+                for (PlayerEntry pEntry : m_blockPlacer.getAllPlayers()) {
+                    if (!pEntry.getName().startsWith(PLAYER_NAME)) {
+                        continue;
+                    }
+                    
+                    BlockPlacerPlayer p = m_blockPlacer.getPlayerEvents(pEntry);
+                    if (p != null) {
+                        Queue<BlockPlacerEntry> queue = p.getQueue();
+                        if (queue != null) {
+                            BlockPlacerEntry[] queuedEntries;
+                            synchronized (queue) {
+                                queuedEntries = queue.toArray(new BlockPlacerEntry[0]);
                             }
-                        }
-                        speed.add(p.getSpeed());
-                        if (seconds % 10 == 0) {
-                            this.secondsLeft = (int) ((double) left / averageSpeed());
+                            for (BlockPlacerEntry e : queuedEntries) {
+                                if (e.getJobId() == this.jobID) {
+                                    left++;
+                                }
+                            }
+                            speed.add(p.getSpeed());
+                            if (seconds % 10 == 0) {
+                                this.secondsLeft = (int) ((double) left / averageSpeed());
 //							System.out.println(secondsLeft + " <- Predicted left");
 //							System.out.println(left + " blocks left.");
 							/* Hologram */
-                            if (holo != null) {
-                                if (!holo.equals("")) {
-                                    if (this.hologram == null) {
-                                        Location l = new Location(world, Integer.parseInt(holo.split(",")[0]), Integer.parseInt(holo.split(",")[1]), Integer
-                                                .parseInt(holo
-                                                        .split(",")[2])).add(0, 0.5, 0);
-                                        replace = getNearestHolo(l);
-                                        if (replace != null) {
-                                            System.out.println("Found existing holo and replacing");
-                                            replace.getVisibilityManager().setVisibleByDefault(false);
+                                if (holo != null) {
+                                    if (!holo.equals("")) {
+                                        if (this.hologram == null) {
+                                            Location l = new Location(world, Integer.parseInt(holo.split(",")[0]), Integer.parseInt(holo.split(",")[1]), Integer
+                                                    .parseInt(holo
+                                                            .split(",")[2])).add(0, 0.5, 0);
+                                            replace = getNearestHolo(l);
+                                            if (replace != null) {
+                                                System.out.println("Found existing holo and replacing");
+                                                replace.getVisibilityManager().setVisibleByDefault(false);
+                                            }
+                                            hologram = HologramsAPI.createHologram(MineResetLite.instance, replace != null ? replace.getLocation() : l);
                                         }
-                                        hologram = HologramsAPI.createHologram(MineResetLite.instance, replace != null ? replace.getLocation() : l);
-                                    }
-                                    double percent = (double) ((double) left / (double) total);
-                                    percent = percent * 100D;
-                                    int blocksLeft = (int) (percent / 10D);
-                                    //int done = 5 - blocksLeft;
-                                    this.hologram.clearLines();
-                                    StringBuilder sb = new StringBuilder();
+                                        double percent = (double) ((double) left / (double) total);
+                                        percent = percent * 100D;
+                                        int blocksLeft = (int) (percent / 10D);
+                                        //int done = 5 - blocksLeft;
+                                        this.hologram.clearLines();
+                                        StringBuilder sb = new StringBuilder();
 
-                                    for (int i = 1; i <= 10; i++) {
+                                        for (int i = 1; i <= 10; i++) {
 
                                             // 1 Left
-                                        // 10 - 1 = 9
-                                        // if i >= total
-                                        // 10 - 3 = 7
-                                        // 6 >= 7
-                                        // 10 - 3 = 7
-                                        // Green 7
-                                        // 8, 9, 10 Black
-                                        if (i >= ((10 - blocksLeft))) {
-                                            sb.append(Phrases.phrase("progressPrimary") + "█");
-                                        } else {
-                                            sb.append(Phrases.phrase("progressSecondary") + "█");
+                                            // 10 - 1 = 9
+                                            // if i >= total
+                                            // 10 - 3 = 7
+                                            // 6 >= 7
+                                            // 10 - 3 = 7
+                                            // Green 7
+                                            // 8, 9, 10 Black
+                                            if (i >= ((10 - blocksLeft))) {
+                                                sb.append(Phrases.phrase("progressPrimary") + "█");
+                                            } else {
+                                                sb.append(Phrases.phrase("progressSecondary") + "█");
+                                            }
                                         }
-                                    }
-                                    String d = Phrases.phrase("progressLayout");
-                                    String[] s = d.split("\\|");
-                                    for (String x : s) {
-                                        x = x.replace("%progressbar", sb.toString());
-                                        x = x.replace("%percent", ((int) percent) + "");
-                                        x = x.replace("%seconds", secondsLeft + "");
-                                        this.hologram.appendTextLine(ChatColor.translateAlternateColorCodes('&', x));
+                                        String d = Phrases.phrase("progressLayout");
+                                        String[] s = d.split("\\|");
+                                        for (String x : s) {
+                                            x = x.replace("%progressbar", sb.toString());
+                                            x = x.replace("%percent", ((int) percent) + "");
+                                            x = x.replace("%seconds", secondsLeft + "");
+                                            this.hologram.appendTextLine(ChatColor.translateAlternateColorCodes('&', x));
+                                        }
                                     }
                                 }
                             }
-                        }
 
+                        }
                     }
                 }
             }

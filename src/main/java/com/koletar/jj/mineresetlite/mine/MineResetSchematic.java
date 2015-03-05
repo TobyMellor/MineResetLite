@@ -12,15 +12,9 @@ import com.sk89q.worldedit.schematic.SchematicFormat;
 import com.sk89q.worldedit.util.Countable;
 import java.io.File;
 import java.io.IOException;
-import java.util.Queue;
 import org.primesoft.asyncworldedit.blockPlacer.BlockPlacer;
-import org.primesoft.asyncworldedit.blockPlacer.BlockPlacerEntry;
-import org.primesoft.asyncworldedit.blockPlacer.entries.JobEntry;
-import org.primesoft.asyncworldedit.playerManager.PlayerEntry;
 import org.primesoft.asyncworldedit.utils.FuncParamEx;
-import org.primesoft.asyncworldedit.worldedit.AsyncCuboidClipboard;
 import org.primesoft.asyncworldedit.worldedit.CancelabeEditSession;
-import org.primesoft.asyncworldedit.worldedit.CuboidClipboardWrapper;
 
 /**
  *

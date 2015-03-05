@@ -29,8 +29,8 @@ public class MineBlockPlacerListener implements IBlockPlacerListener, Runnable {
     }
 
     public void jobAdded(JobEntry job) {
-        if (job.getName().equals(m_jobName)
-                && job.getPlayer().equals(PlayerEntry.UNKNOWN)) {
+        //&& job.getPlayer().equals(PlayerEntry.UNKNOWN)
+        if (job.getName().equals(m_jobName)) {
             job.addStateChangedListener(m_stateListener);
             
 

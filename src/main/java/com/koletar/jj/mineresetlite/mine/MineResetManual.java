@@ -13,8 +13,6 @@ import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.Region;
 import org.bukkit.World;
 import org.primesoft.asyncworldedit.blockPlacer.BlockPlacer;
-import org.primesoft.asyncworldedit.blockPlacer.entries.JobEntry;
-import org.primesoft.asyncworldedit.playerManager.PlayerEntry;
 import org.primesoft.asyncworldedit.utils.FuncParamEx;
 import org.primesoft.asyncworldedit.worldedit.CancelabeEditSession;
 import us.myles.Sengine.Sengine;
@@ -26,18 +24,16 @@ import us.myles.Sengine.Sengine;
 public class MineResetManual implements FuncParamEx<Integer, CancelabeEditSession, MaxChangedBlocksException> {
 
     private final BlockPlacer m_blockPlacer;
-    private final String m_jobName;
     private final String m_name;
     private final IMine m_mine;
     private final Region m_region;
     private final MinePattern m_pattern;
 
-    public MineResetManual(BlockPlacer bp, String jobName, String name, 
+    public MineResetManual(BlockPlacer bp, String name, 
             IMine mine, World world, MinePattern pattern,
             int minX, int minY, int minZ,
             int maxX, int maxY, int maxZ) {
         m_pattern = pattern;
-        m_jobName = jobName;
         m_name = name;
         m_blockPlacer = bp;
         m_mine = mine;

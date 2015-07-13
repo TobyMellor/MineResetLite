@@ -1,6 +1,6 @@
 package com.koletar.jj.mineresetlite;
 
-import org.primesoft.asyncworldedit.blockPlacer.IBlockPlacerListener;
+import org.primesoft.asyncworldedit.api.blockPlacer.IBlockPlacerListener;
 import org.primesoft.asyncworldedit.blockPlacer.entries.JobEntry;
 
 public class MineListener implements IBlockPlacerListener {

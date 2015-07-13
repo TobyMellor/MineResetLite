@@ -3,6 +3,7 @@ package com.koletar.jj.mineresetlite.commands;
 import com.koletar.jj.mineresetlite.*;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import com.sk89q.worldedit.bukkit.selections.Selection;
+
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -15,6 +16,7 @@ import org.bukkit.util.Vector;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +57,7 @@ public class MineCommands {
 		Player player = (Player) sender;
 		if (args.length == 0) {
 			//Use block being looked at
-			point1.put(player, player.getTargetBlock(null, 100).getLocation());
+			point1.put(player, player.getTargetBlock((HashSet<Byte>) null, 100).getLocation());
 			player.sendMessage(phrase("firstPointSet"));
 			return;
 		} else if (args[0].equalsIgnoreCase("-feet")) {
@@ -79,7 +81,7 @@ public class MineCommands {
 		Player player = (Player) sender;
 		if (args.length == 0) {
 			//Use block being looked at
-			point2.put(player, player.getTargetBlock(null, 100).getLocation());
+			point2.put(player, player.getTargetBlock((HashSet<Byte>) null, 100).getLocation());
 			player.sendMessage(phrase("secondPointSet"));
 			return;
 		} else if (args[0].equalsIgnoreCase("-feet")) {
@@ -567,7 +569,7 @@ public class MineCommands {
 		} else if (setting.equalsIgnoreCase("addsign")) {
 			if (sender instanceof Player) {
 				Player p = (Player) sender;
-				Block b = p.getTargetBlock(null, 10);
+				Block b = p.getTargetBlock((HashSet<Byte>) null, 10);
 				if (b != null) {
 					if (b.getState() instanceof Sign) {
 						mines[0].addSign((Sign) b.getState());

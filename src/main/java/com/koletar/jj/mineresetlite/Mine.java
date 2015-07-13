@@ -9,22 +9,24 @@ import com.sk89q.worldedit.MaxChangedBlocksException;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.bukkit.BukkitWorld;
 import com.sk89q.worldedit.regions.CuboidRegion;
+
 import org.bukkit.*;
 import org.bukkit.block.Sign;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Player;
 import org.primesoft.asyncworldedit.AsyncWorldEditMain;
-import org.primesoft.asyncworldedit.PlayerEntry;
+import org.primesoft.asyncworldedit.api.blockPlacer.IBlockPlacerListener;
+import org.primesoft.asyncworldedit.api.blockPlacer.IJobEntryListener;
 import org.primesoft.asyncworldedit.blockPlacer.BlockPlacerEntry;
 import org.primesoft.asyncworldedit.blockPlacer.BlockPlacerPlayer;
-import org.primesoft.asyncworldedit.blockPlacer.IBlockPlacerListener;
-import org.primesoft.asyncworldedit.blockPlacer.IJobEntryListener;
 import org.primesoft.asyncworldedit.blockPlacer.entries.JobEntry;
+import org.primesoft.asyncworldedit.playerManager.PlayerEntry;
 import org.primesoft.asyncworldedit.utils.FuncParamEx;
 import org.primesoft.asyncworldedit.worldedit.AsyncEditSessionFactory;
 import org.primesoft.asyncworldedit.worldedit.CancelabeEditSession;
 import org.primesoft.asyncworldedit.worldedit.ThreadSafeEditSession;
+
 import us.myles.Sengine.Sengine;
 import us.myles.Sengine.cache.CacheCollector;
 import us.myles.Sengine.cache.CacheProvider;
@@ -611,19 +613,19 @@ public class Mine implements ConfigurationSerializable {
 				MineResetLite.broadcast("Error Schematic not found... " + sch, this);
 			} else {
 				MineResetLite.broadcast(Phrases.phrase("schematicBc", this, sch), this);
-
 				AsyncWorldEditMain.getInstance()
-						.getBlockPlacer().PerformAsAsyncJob((ThreadSafeEditSession) es,
+						.getBlockPlacer().performAsAsyncJob((ThreadSafeEditSession) es,
 						PlayerEntry.UNKNOWN,
 						jobName, new FuncParamEx<Integer, CancelabeEditSession, MaxChangedBlocksException>() {
 							@Override
-							public Integer Execute(CancelabeEditSession cancelabeEditSession) throws MaxChangedBlocksException {
+							public Integer execute(CancelabeEditSession cancelableEditSession)
+									throws MaxChangedBlocksException {
 								try {
 									CuboidClipboard cc = CuboidClipboard.loadSchematic(f);
 									if (origin == null) {
-										cc.paste(cancelabeEditSession, new com.sk89q.worldedit.Vector(minX, maxY, minZ), false);
+										cc.paste(cancelableEditSession, new com.sk89q.worldedit.Vector(minX, maxY, minZ), false);
 									} else {
-										cc.paste(cancelabeEditSession, new com.sk89q.worldedit.Vector(Integer.parseInt(origin.split(",")[0]), Integer.parseInt(origin.split(",")[1]), Integer.parseInt(origin.split(",")[2])), false);
+										cc.paste(cancelableEditSession, new com.sk89q.worldedit.Vector(Integer.parseInt(origin.split(",")[0]), Integer.parseInt(origin.split(",")[1]), Integer.parseInt(origin.split(",")[2])), false);
 									}
 									for (JobEntry e : AsyncWorldEditMain.getInstance().getBlockPlacer().getPlayerEvents(PlayerEntry.UNKNOWN).getJobs()) {
 										if (e.getName().equalsIgnoreCase(jobName)) {
@@ -648,6 +650,7 @@ public class Mine implements ConfigurationSerializable {
 								}
 								return 0;
 							}
+
 						}
 				);
 			}
@@ -655,17 +658,14 @@ public class Mine implements ConfigurationSerializable {
 		} else {
 			// Manually :(
 			final Mine t = this;
-			AsyncWorldEditMain.getInstance()
-					.getBlockPlacer().PerformAsAsyncJob((ThreadSafeEditSession) es,
-					PlayerEntry.UNKNOWN,
-					jobName, new FuncParamEx<Integer, CancelabeEditSession, MaxChangedBlocksException>() {
-						@Override
-						public Integer Execute(CancelabeEditSession cancelabeEditSession) throws MaxChangedBlocksException {
+			AsyncWorldEditMain.getInstance().getBlockPlacer().performAsAsyncJob((ThreadSafeEditSession) es, PlayerEntry.UNKNOWN, jobName, new FuncParamEx<Integer, CancelabeEditSession, MaxChangedBlocksException>() {
 
-							/* Brum. */
+						@Override
+						public Integer execute(CancelabeEditSession cancelableEditSession)
+								throws MaxChangedBlocksException {
 							try {
 								CuboidRegion region = new CuboidRegion(new BukkitWorld(world), new com.sk89q.worldedit.Vector(minX, minY, minZ), new com.sk89q.worldedit.Vector(maxX, maxY, maxZ));
-								int i = cancelabeEditSession.setBlocks(region, new MinePattern(t));
+								int i = cancelableEditSession.setBlocks(region, new MinePattern(t));
 								for (JobEntry e : AsyncWorldEditMain.getInstance().getBlockPlacer().getPlayerEvents(PlayerEntry.UNKNOWN).getJobs()) {
 									if (e.getName().equalsIgnoreCase(jobName)) {
 										jobID = e.getJobId();
@@ -675,13 +675,6 @@ public class Mine implements ConfigurationSerializable {
 							} catch (Exception e) {
 								Sengine.dump(e, "Mine: " + name, "ID: " + jobID);
 							}
-//							Bukkit.getScheduler().scheduleSyncDelayedTask(MineResetLite.instance, new Runnable() {
-//
-//								@Override
-//								public void run() {
-//
-//								}
-//							}, 2L);
 
 							return 0;
 						}

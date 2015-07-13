@@ -56,7 +56,7 @@ public class Phrases {
         for (int i = 0; i < replacements.length; i++) {
             format = format.replace("%" + i + "%", findName(replacements[i]));
         }
-        format = format.replace("&", "\u00A7").replace("\u00A7\u00A7", "&");
+        format = format.replace("&", "\u00A7").replace("\u00A7\u00A7", "&").replace("%unicode%", "»");
         return format;
     }
 
